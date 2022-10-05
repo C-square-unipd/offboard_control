@@ -375,10 +375,12 @@ void OffboardControl::initTrajVars() {
         Vector3d pointB = pointA + vrt;
         Vector3d pointC = pointB + vrt;
         Vector3d pointD = pointC + vrt;
+		Vector3d pointLand = pointA;
+		pointLand[2] = 0.0;
 
-        MatrixXd wp(3,13);
+        MatrixXd wp(3,15);
 		wayPoints_ = wp;
-        wayPoints_ << pointA, pointB, pointB, pointC, pointC, pointD, pointD, pointC, pointC, pointB, pointB, pointA, pointA;       
+        wayPoints_ << pointA, pointB, pointB, pointC, pointC, pointD, pointD, pointC, pointC, pointB, pointB, pointA, pointA, pointLand, pointLand;       
     }
 
     VectorXd tp(wayPoints_.cols());
@@ -393,6 +395,7 @@ void OffboardControl::initTrajVars() {
         }
 
     landTime_    = timePoints_(last);
+
 }
 
 /**
