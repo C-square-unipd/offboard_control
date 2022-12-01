@@ -3,18 +3,18 @@ offboard_control:
       debug: true
 
       ## Square test
-      # test: 0
-      # MotionStart: 15.0
-      # Tmotion: 10.0
-      # Trest: 2.0
-      # StartingPoint: [3.52, 5.61, -0.8]
-      # deltaX: 2.0
-      # deltaY: 2.0
+      test: 0
+      MotionStart: 15.0
+      Tmotion: 10.0
+      Trest: 2.0
+      StartingPoint: [3.47, 5.63, -0.8]
+      deltaX: 2.0
+      deltaY: 2.0
 
       ## Step test
-      test: 1
-      MotionStart: 15.0
-      Tmotion: 3.0
-      Trest: 6.0
-      StartingPoint: [2.41, 4.9, -0.8]      
-      deltaZ: 0.3
+      # test: 1
+      # MotionStart: 15.0
+      # Tmotion: 3.0
+      # Trest: 6.0
+      # StartingPoint: [2.41, 4.9, -0.8]      
+      # deltaZ: 0.3
