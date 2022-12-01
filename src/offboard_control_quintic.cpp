@@ -49,6 +49,9 @@
 #include <px4_msgs/msg/vehicle_command.hpp>
 #include <px4_msgs/msg/vehicle_control_mode.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2/LinearMath/Quaternion.h>
 #include <stdint.h>
 
 #include <chrono>
@@ -80,12 +83,7 @@ public:
 			this->create_publisher<VehicleCommand>("fmu/vehicle_command/in");
 #endif
 		
-		// Get common timestamp
-		timesync_sub_ =
-			this->create_subscription<px4_msgs::msg::Timesync>("fmu/timesync/out", 10,
-				[this](const px4_msgs::msg::Timesync::UniquePtr msg) {
-					timestamp_.store(msg->timestamp);
-				});
+		tf_setpoint_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
 		offboard_setpoint_counter_ = 0;
 		phase_ = 0;
@@ -104,6 +102,9 @@ public:
 
 		initTrajVars();
 		initTrajVector();
+
+
+
 
 		auto timer_callback = [this]() -> void {
 
@@ -177,6 +178,8 @@ public:
 private:
 	rclcpp::TimerBase::SharedPtr timer_;
 
+	std::unique_ptr<tf2_ros::TransformBroadcaster> tf_setpoint_broadcaster_;
+
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
 	rclcpp::Publisher<VehicleCommand>::SharedPtr vehicle_command_publisher_;
@@ -238,7 +241,8 @@ void OffboardControl::disarm() const {
  */
 void OffboardControl::publish_offboard_control_mode() const {
 	OffboardControlMode msg{};
-	msg.timestamp = timestamp_.load();
+	rclcpp::Time now = this->now();
+	msg.timestamp = now.nanoseconds() / 1000;	
 	msg.position = true;
 	msg.velocity = false;
 	msg.acceleration = false;
@@ -257,7 +261,8 @@ void OffboardControl::publish_offboard_control_mode() const {
 void OffboardControl::publish_vehicle_command(uint16_t command, float param1,
 					      float param2, float param3, float param4) const {
 	VehicleCommand msg{};
-	msg.timestamp = timestamp_.load();
+	rclcpp::Time now = this->now();
+	msg.timestamp = now.nanoseconds() / 1000;	
 	msg.param1 = param1;
 	msg.param2 = param2;
 	msg.param3 = param3;
@@ -444,8 +449,38 @@ void OffboardControl::publish_trajectory_setpoint(uint64_t counter) const {
  	{
  		msg = traj_[traj_.size()-1];
  	}
- 	msg.timestamp = timestamp_.load();
+
  	trajectory_setpoint_publisher_->publish(msg);
+
+	broadcast_trajectory_setpoint(msg);
+	
+}
+
+
+
+void OffboardControl::broadcast_trajectory_setpoint(TrajectorySetpoint msg) const {
+	
+	rclcpp::Time now = this->get_clock()->now();
+	geometry_msgs::msg::TransformStamped tf_setpoint;
+
+	tf_drone.header.stamp = now;
+	tf_drone.header.frame_id = "home_map";
+	tf_drone.child_frame_id = "setpoint";
+
+	tf_drone.transform.translation.x = msg.position[0];
+	tf_drone.transform.translation.y = msg.position[1];
+	tf_drone.transform.translation.z = msg.position[2];
+
+	// VehicleOdometry msg has quaternion defined like: q{w, x, y, z} = {scalar, vect(3)}
+	// tf2::Quaternion is defined like: q{x, y, z, w} = {vect(3), scalar}
+	tf2::Quaternion quat{msg.q[1], msg.q[2], msg.q[3], msg.q[0]};
+	tf_drone.transform.rotation.x = quat.getX();
+	tf_drone.transform.rotation.y = quat.getY();
+	tf_drone.transform.rotation.z = quat.getZ();
+	tf_drone.transform.rotation.w = quat.getW();
+
+	// Send the transformation
+	tf_setpoint_broadcaster_->sendTransform(tf_setpoint);
 }
 
 //------------------------------//
