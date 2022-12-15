@@ -213,9 +213,9 @@ private:
 	void publish_trajectory_setpoint(uint64_t counter) const;
 
 	void publish_offboard_control_mode() const;
-	void publish_trajectory_setpoint() const;
 	void publish_vehicle_command(uint16_t command, float param1 = 0.0,
 				     float param2 = 0.0, float param3 = 0.0, float param4 = 0.0) const;
+	void broadcast_trajectory_setpoint(TrajectorySetpoint msg) const;
 };
 
 /**
@@ -460,24 +460,26 @@ void OffboardControl::publish_trajectory_setpoint(uint64_t counter) const {
 
 void OffboardControl::broadcast_trajectory_setpoint(TrajectorySetpoint msg) const {
 	
-	rclcpp::Time now = this->get_clock()->now();
+	rclcpp::Time now = this->now();
 	geometry_msgs::msg::TransformStamped tf_setpoint;
 
-	tf_drone.header.stamp = now;
-	tf_drone.header.frame_id = "home_map";
-	tf_drone.child_frame_id = "setpoint";
+	tf_setpoint.header.stamp = now;
+	tf_setpoint.header.frame_id = "home_map";
+	tf_setpoint.child_frame_id = "setpoint";
 
-	tf_drone.transform.translation.x = msg.position[0];
-	tf_drone.transform.translation.y = msg.position[1];
-	tf_drone.transform.translation.z = msg.position[2];
+	tf_setpoint.transform.translation.x = msg.position[0];
+	tf_setpoint.transform.translation.y = msg.position[1];
+	tf_setpoint.transform.translation.z = msg.position[2];
 
 	// VehicleOdometry msg has quaternion defined like: q{w, x, y, z} = {scalar, vect(3)}
 	// tf2::Quaternion is defined like: q{x, y, z, w} = {vect(3), scalar}
-	tf2::Quaternion quat{msg.q[1], msg.q[2], msg.q[3], msg.q[0]};
-	tf_drone.transform.rotation.x = quat.getX();
-	tf_drone.transform.rotation.y = quat.getY();
-	tf_drone.transform.rotation.z = quat.getZ();
-	tf_drone.transform.rotation.w = quat.getW();
+	tf2::Quaternion quat;
+	quat.setRPY(0,0,msg.yaw);
+	
+	tf_setpoint.transform.rotation.x = quat.getX();
+	tf_setpoint.transform.rotation.y = quat.getY();
+	tf_setpoint.transform.rotation.z = quat.getZ();
+	tf_setpoint.transform.rotation.w = quat.getW();
 
 	// Send the transformation
 	tf_setpoint_broadcaster_->sendTransform(tf_setpoint);
