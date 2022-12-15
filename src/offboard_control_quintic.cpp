@@ -74,6 +74,8 @@ public:
 			this->create_publisher<TrajectorySetpoint>("fmu/trajectory_setpoint/in", 10);
 		vehicle_command_publisher_ =
 			this->create_publisher<VehicleCommand>("fmu/vehicle_command/in", 10);
+		pub_tf_sp =
+		this->create_publisher<tf2_msgs::msg::TFMessage>("/tf_sp", 100);
 #else
 		offboard_control_mode_publisher_ =
 			this->create_publisher<OffboardControlMode>("fmu/offboard_control_mode/in");
@@ -81,6 +83,8 @@ public:
 			this->create_publisher<TrajectorySetpoint>("fmu/trajectory_setpoint/in");
 		vehicle_command_publisher_ =
 			this->create_publisher<VehicleCommand>("fmu/vehicle_command/in");
+		pub_tf_sp =
+		this->create_publisher<tf2_msgs::msg::TFMessage>("/tf_sp");
 #endif
 		
 		tf_setpoint_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -182,6 +186,7 @@ private:
 
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
+	rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr pub_tf_sp;
 	rclcpp::Publisher<VehicleCommand>::SharedPtr vehicle_command_publisher_;
 	rclcpp::Subscription<px4_msgs::msg::Timesync>::SharedPtr timesync_sub_;
 
@@ -357,13 +362,25 @@ void OffboardControl::initTrajVars() {
     if(test_ == 0)	// Horizontal square trajectory
     {
 
-        Vector3d vrt;
+        // Vector3d vrt;
+        // Vector3d pointA = StartingPoint_;
+        // vrt = {-deltaX_, 0, 0};
+        // Vector3d pointB = pointA + vrt;
+        // vrt = {0, -deltaY_, 0};
+        // Vector3d pointC = pointB + vrt;
+        // vrt = {deltaX_, 0, 0};
+        // Vector3d pointD = pointC + vrt;
+		// Vector3d pointLand = pointA;
+		// pointLand[2] = 0.0;
+
+		// SPARCSLAB
+		Vector3d vrt;
         Vector3d pointA = StartingPoint_;
-        vrt = {-deltaX_, 0, 0};
+		vrt = {0, -deltaY_, 0};
         Vector3d pointB = pointA + vrt;
-        vrt = {0, -deltaY_, 0};
-        Vector3d pointC = pointB + vrt;
         vrt = {deltaX_, 0, 0};
+        Vector3d pointC = pointB + vrt;
+        vrt = {0, deltaY_, 0};
         Vector3d pointD = pointC + vrt;
 		Vector3d pointLand = pointA;
 		pointLand[2] = 0.0;
@@ -429,7 +446,8 @@ void OffboardControl::initTrajVector() {
 	for(int i= 0; i<q.cols();i++)
     {
 		setpoint.position = {(float) q(0,i), (float) q(1,i), (float) q(2,i)};
-		setpoint.yaw = -M_PI; 
+		//setpoint.yaw = -M_PI; 
+		setpoint.yaw = -M_PI/2;
 
 		traj_.push_back(setpoint);
     }
@@ -462,6 +480,7 @@ void OffboardControl::broadcast_trajectory_setpoint(TrajectorySetpoint msg) cons
 	
 	rclcpp::Time now = this->now();
 	geometry_msgs::msg::TransformStamped tf_setpoint;
+	tf2_msgs::msg::TFMessage tfs_sp;
 
 	tf_setpoint.header.stamp = now;
 	tf_setpoint.header.frame_id = "home_map";
@@ -483,6 +502,8 @@ void OffboardControl::broadcast_trajectory_setpoint(TrajectorySetpoint msg) cons
 
 	// Send the transformation
 	tf_setpoint_broadcaster_->sendTransform(tf_setpoint);
+	tfs_sp.transforms.push_back(tf_setpoint);
+	pub_tf_sp->publish(tfs_sp);
 }
 
 //------------------------------//

@@ -5,16 +5,16 @@ offboard_control:
       ## Square test
       test: 0
       MotionStart: 15.0
-      Tmotion: 10.0
-      Trest: 2.0
-      StartingPoint: [3.47, 5.63, -0.8]
-      deltaX: 2.0
-      deltaY: 2.0
+      Tmotion: 15.0
+      Trest: 10.0
+      StartingPoint: [1.44, 2.75, -0.8]
+      deltaX: 1.8
+      deltaY: 1.8
 
       ## Step test
       # test: 1
       # MotionStart: 15.0
-      # Tmotion: 3.0
-      # Trest: 6.0
-      # StartingPoint: [2.41, 4.9, -0.8]      
+      # Tmotion: 10.0
+      # Trest: 10.0
+      # StartingPoint: [2.41, 4.9, -0.7]      
       # deltaZ: 0.3
