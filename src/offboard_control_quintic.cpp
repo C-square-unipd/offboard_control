@@ -82,6 +82,7 @@ public:
 		Trest_ = declare_parameter<double>("Trest", 2.0);
 		std::vector<double> StartingPoint = declare_parameter<std::vector<double>>("StartingPoint", {1.0,1.0,-1.0});
 		StartingPoint_ = {StartingPoint[0], StartingPoint[1], StartingPoint[2]};
+		yaw_ = declare_parameter<double>("yaw", -M_PI);
 		deltaX_ = declare_parameter<double>("deltaX", 2.0);
 		deltaY_ = declare_parameter<double>("deltaY", 2.0);
 		deltaZ_ = declare_parameter<double>("deltaZ", 0.25);
@@ -181,6 +182,7 @@ private:
 	double Tmotion_;
 	double Trest_;
 	Vector3d StartingPoint_;
+	double yaw_;
 	double deltaX_;
 	double deltaY_;
 	double deltaZ_;
@@ -330,9 +332,10 @@ MatrixXd OffboardControl::quinticPolyTraj(VectorXd timeLine){
  */
 void OffboardControl::initTrajVars() {
 
-    if(test_ == 0)	// Horizontal square trajectory
+    switch(test_) 	// Horizontal square trajectory
     {
-
+	case 0:
+		{
         Vector3d vrt;
         Vector3d pointA = StartingPoint_;
         vrt = {-deltaX_, 0, 0};
@@ -347,11 +350,11 @@ void OffboardControl::initTrajVars() {
         MatrixXd wp(3,11);
 		wayPoints_ = wp;
         wayPoints_ << pointA, pointB, pointB, pointC, pointC, pointD, pointD, pointA, pointA, pointLand, pointLand;
-    }
-    else			// Vertical steps trajectory
-    {
-
-        Vector3d vrt = {0, 0, -deltaZ_};
+		break;
+		}
+	case 1:	// Vertical steps trajectory
+        {
+		Vector3d vrt = {0, 0, -deltaZ_};
         Vector3d pointA = StartingPoint_;
         Vector3d pointB = pointA + vrt;
         Vector3d pointC = pointB + vrt;
@@ -362,7 +365,22 @@ void OffboardControl::initTrajVars() {
         MatrixXd wp(3,15);
 		wayPoints_ = wp;
         wayPoints_ << pointA, pointB, pointB, pointC, pointC, pointD, pointD, pointC, pointC, pointB, pointB, pointA, pointA, pointLand, pointLand;       
-    }
+		break;
+		}
+	case 2: // Hovering trajectory
+	    {
+		Vector3d vrt = {0, 0, -deltaZ_};
+		Vector3d pointA = StartingPoint_;
+        Vector3d pointB = pointA + vrt;
+		Vector3d pointLand = pointA;
+		pointLand[2] = 0.0;
+
+        MatrixXd wp(3,5);
+		wayPoints_ = wp;
+        wayPoints_ << pointA, pointB, pointB, pointLand, pointLand;       
+		break;
+		}
+	}
 
     VectorXd tp(wayPoints_.cols());
 	timePoints_ = tp;
@@ -405,7 +423,7 @@ void OffboardControl::initTrajVector() {
 	for(int i= 0; i<q.cols();i++)
     {
 		setpoint.position = {(float) q(0,i), (float) q(1,i), (float) q(2,i)};
-		setpoint.yaw = -M_PI; 
+		setpoint.yaw = yaw_; 
 
 		traj_.push_back(setpoint);
     }
@@ -418,7 +436,7 @@ void OffboardControl::publish_trajectory_setpoint(uint64_t counter) {
  	
 	TrajectorySetpoint msg{};
 
-	 if (counter < traj_.size()) {
+	if (counter < traj_.size()) {
  		msg = traj_[counter];
  	}
  	else if (traj_.size() > 0)

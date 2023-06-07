@@ -8,6 +8,7 @@ offboard_control:
       Tmotion: 10.0
       Trest: 2.0
       StartingPoint: [3.47, 5.63, -0.8]
+      yaw: -180
       deltaX: 2.0
       deltaY: 2.0
 
@@ -16,5 +17,15 @@ offboard_control:
       # MotionStart: 15.0
       # Tmotion: 3.0
       # Trest: 6.0
-      # StartingPoint: [2.41, 4.9, -0.8]      
+      # StartingPoint: [2.41, 4.9, -0.8]   
+      # yaw: -180   
+      # deltaZ: 0.3
+
+      ## Hovering test
+      # test: 2
+      # MotionStart: 15.0
+      # Tmotion: 3.0
+      # Trest: 30.0
+      # StartingPoint: [2.41, 4.9, -0.8]   
+      # yaw: -180   
       # deltaZ: 0.3
