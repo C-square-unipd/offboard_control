@@ -6,6 +6,8 @@
   <description>Implementation of offboard control for drones</description>
   <maintainer email="massimiliano.bertoni@studenti.unipd.it">maxbertus</maintainer>
   <license>Alpha Licence 2.0</license>
+  
+  <depend>px4_msgs</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

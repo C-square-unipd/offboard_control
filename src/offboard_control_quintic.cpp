@@ -45,15 +45,14 @@
 
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
-#include <px4_msgs/msg/timesync.hpp>
 #include <px4_msgs/msg/vehicle_command.hpp>
 #include <px4_msgs/msg/vehicle_control_mode.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <stdint.h>
 
 #include <chrono>
-#include <vector>
 #include <iostream>
+#include <vector>
 #include <eigen3/Eigen/Dense>
 
 using namespace std::chrono;
@@ -64,28 +63,13 @@ using namespace Eigen;
 class OffboardControl : public rclcpp::Node {
 public:
 	OffboardControl() : Node("offboard_control") {
-#ifdef ROS_DEFAULT_API
+
 		offboard_control_mode_publisher_ =
-			this->create_publisher<OffboardControlMode>("fmu/offboard_control_mode/in", 10);
+			this->create_publisher<OffboardControlMode>("fmu/in/offboard_control_mode", 10);
 		trajectory_setpoint_publisher_ =
-			this->create_publisher<TrajectorySetpoint>("fmu/trajectory_setpoint/in", 10);
+			this->create_publisher<TrajectorySetpoint>("fmu/in/trajectory_setpoint", 10);
 		vehicle_command_publisher_ =
-			this->create_publisher<VehicleCommand>("fmu/vehicle_command/in", 10);
-#else
-		offboard_control_mode_publisher_ =
-			this->create_publisher<OffboardControlMode>("fmu/offboard_control_mode/in");
-		trajectory_setpoint_publisher_ =
-			this->create_publisher<TrajectorySetpoint>("fmu/trajectory_setpoint/in");
-		vehicle_command_publisher_ =
-			this->create_publisher<VehicleCommand>("fmu/vehicle_command/in");
-#endif
-		
-		// Get common timestamp
-		timesync_sub_ =
-			this->create_subscription<px4_msgs::msg::Timesync>("fmu/timesync/out", 10,
-				[this](const px4_msgs::msg::Timesync::UniquePtr msg) {
-					timestamp_.store(msg->timestamp);
-				});
+			this->create_publisher<VehicleCommand>("fmu/in/vehicle_command", 10);
 
 		offboard_setpoint_counter_ = 0;
 		phase_ = 0;
@@ -117,6 +101,7 @@ public:
 				this->arm();
 			}
 
+			// offboard_control_mode needs to be paired with trajectory_setpoint
 			if (offboard_setpoint_counter_ < landTime_/0.1){
 				publish_offboard_control_mode();
 				publish_trajectory_setpoint(offboard_setpoint_counter_);
@@ -171,8 +156,8 @@ public:
 
 	// END OF THE CONSTRUCTOR
 
-	void arm() const;
-	void disarm() const;
+	void arm();
+	void disarm();
 
 private:
 	rclcpp::TimerBase::SharedPtr timer_;
@@ -180,9 +165,6 @@ private:
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
 	rclcpp::Publisher<VehicleCommand>::SharedPtr vehicle_command_publisher_;
-	rclcpp::Subscription<px4_msgs::msg::Timesync>::SharedPtr timesync_sub_;
-
-	std::atomic<uint64_t> timestamp_;   //!< common synced timestamped
 
 	uint64_t offboard_setpoint_counter_;   //!< counter for the number of setpoints sent
 
@@ -207,18 +189,18 @@ private:
 	MatrixXd quinticPolyTraj(VectorXd timeLine);
 	void initTrajVars();
 	void initTrajVector();
-	void publish_trajectory_setpoint(uint64_t counter) const;
+	void publish_trajectory_setpoint(uint64_t counter);
 
-	void publish_offboard_control_mode() const;
-	void publish_trajectory_setpoint() const;
+	void publish_offboard_control_mode();
+	void publish_trajectory_setpoint();
 	void publish_vehicle_command(uint16_t command, float param1 = 0.0,
-				     float param2 = 0.0, float param3 = 0.0, float param4 = 0.0) const;
+				     float param2 = 0.0, float param3 = 0.0, float param4 = 0.0);
 };
 
 /**
  * @brief Send a command to Arm the vehicle
  */
-void OffboardControl::arm() const {
+void OffboardControl::arm() {
 	publish_vehicle_command(VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 1.0);
 
 	RCLCPP_INFO(this->get_logger(), "Arm command send");
@@ -227,7 +209,7 @@ void OffboardControl::arm() const {
 /**
  * @brief Send a command to Disarm the vehicle
  */
-void OffboardControl::disarm() const {
+void OffboardControl::disarm() {
 	publish_vehicle_command(VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 0.0);
 
 	RCLCPP_INFO(this->get_logger(), "Disarm command send");
@@ -236,15 +218,14 @@ void OffboardControl::disarm() const {
 /**
  * @brief Publish the offboard control mode.
  */
-void OffboardControl::publish_offboard_control_mode() const {
+void OffboardControl::publish_offboard_control_mode() {
 	OffboardControlMode msg{};
-	msg.timestamp = timestamp_.load();
 	msg.position = true;
 	msg.velocity = false;
 	msg.acceleration = false;
 	msg.attitude = false;
 	msg.body_rate = false;
-
+	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	offboard_control_mode_publisher_->publish(msg);
 }
 
@@ -255,9 +236,8 @@ void OffboardControl::publish_offboard_control_mode() const {
  * @param param2    Command parameter 2
  */
 void OffboardControl::publish_vehicle_command(uint16_t command, float param1,
-					      float param2, float param3, float param4) const {
+					      float param2, float param3, float param4)  {
 	VehicleCommand msg{};
-	msg.timestamp = timestamp_.load();
 	msg.param1 = param1;
 	msg.param2 = param2;
 	msg.param3 = param3;
@@ -268,6 +248,7 @@ void OffboardControl::publish_vehicle_command(uint16_t command, float param1,
 	msg.source_system = 1;
 	msg.source_component = 1;
 	msg.from_external = true;
+	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 
 	vehicle_command_publisher_->publish(msg);
 }
@@ -433,7 +414,7 @@ void OffboardControl::initTrajVector() {
 /**
  * @brief Publish a trajectory setpoint message
  */
-void OffboardControl::publish_trajectory_setpoint(uint64_t counter) const {
+void OffboardControl::publish_trajectory_setpoint(uint64_t counter) {
  	
 	TrajectorySetpoint msg{};
 
@@ -444,7 +425,7 @@ void OffboardControl::publish_trajectory_setpoint(uint64_t counter) const {
  	{
  		msg = traj_[traj_.size()-1];
  	}
- 	msg.timestamp = timestamp_.load();
+	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
  	trajectory_setpoint_publisher_->publish(msg);
 }
 
