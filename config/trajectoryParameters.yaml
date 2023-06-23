@@ -2,13 +2,13 @@ offboard_control:
     ros__parameters:
       debug: true
 
-      ## Square test
+      # Square test
       test: 0
       MotionStart: 15.0
       Tmotion: 10.0
       Trest: 2.0
-      StartingPoint: [3.47, 5.63, -0.8]
-      yaw: -180.0
+      StartingPoint: [0.0, 0.0, -2.0]
+      yaw: 0.0
       deltaX: 2.0
       deltaY: 2.0
 
@@ -21,11 +21,11 @@ offboard_control:
       # yaw: -180   
       # deltaZ: 0.3
 
-      ## Hovering test
+      # # Hovering test
       # test: 2
       # MotionStart: 15.0
-      # Tmotion: 3.0
-      # Trest: 30.0
+      # Tmotion: 5.0
+      # Trest: 5.0
       # StartingPoint: [2.41, 4.9, -0.8]   
-      # yaw: -180   
-      # deltaZ: 0.3
+      # yaw: -180.0   
+      # deltaZ: 0.4

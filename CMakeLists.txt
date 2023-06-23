@@ -34,13 +34,24 @@ find_package(px4_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 add_executable(offboard_control_quintic src/offboard_control_quintic.cpp)
+add_executable(offboard_control_spline src/offboard_control_spline.cpp)
+
 ament_target_dependencies(offboard_control_quintic
 	px4_msgs
 	rclcpp
 	Eigen3
 )
 
+ament_target_dependencies(offboard_control_spline
+	px4_msgs
+	rclcpp
+	Eigen3
+)
+
 install(TARGETS offboard_control_quintic
+DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS offboard_control_spline
 DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY config/ DESTINATION share/${PROJECT_NAME}/config)
