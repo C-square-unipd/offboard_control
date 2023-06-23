@@ -1,0 +1,10 @@
+offboard_control:
+    ros__parameters:
+      debug: true
+
+      TTakeOff: 20.0
+      TLand: 10.0
+      TimePoints: [0.0, 5.0, 15.0, 20.0]
+      PointsX: [0.0, 0.75, 2.5,3.5]
+      PointsY: [0.0, 1.2, 0.0, 1.2]
+      PointsZ: [-1.0, -1.0, -1.0, -1.0]
