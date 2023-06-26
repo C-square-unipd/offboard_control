@@ -8,7 +8,7 @@ offboard_control:
       Tmotion: 10.0
       Trest: 2.0
       StartingPoint: [0.0, 0.0, -2.0]
-      yaw: 0.0
+      yaw: 0.785
       deltaX: 2.0
       deltaY: 2.0
 
