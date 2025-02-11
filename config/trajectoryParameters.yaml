@@ -7,7 +7,7 @@ offboard_control:
       MotionStart: 15.0
       Tmotion: 10.0
       Trest: 2.0
-      StartingPoint: [3.47, 5.63, -0.8]
+      StartingPoint: [-1,1, -0.8]
       deltaX: 2.0
       deltaY: 2.0
 

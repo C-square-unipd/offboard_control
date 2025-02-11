@@ -354,11 +354,11 @@ void OffboardControl::initTrajVars() {
 
         Vector3d vrt;
         Vector3d pointA = StartingPoint_;
-        vrt = {-deltaX_, 0, 0};
-        Vector3d pointB = pointA + vrt;
         vrt = {0, -deltaY_, 0};
-        Vector3d pointC = pointB + vrt;
+        Vector3d pointB = pointA + vrt;
         vrt = {deltaX_, 0, 0};
+        Vector3d pointC = pointB + vrt;
+        vrt = {0, deltaY_, 0};
         Vector3d pointD = pointC + vrt;
 		Vector3d pointLand = pointA;
 		pointLand[2] = 0.0;
