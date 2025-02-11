@@ -9,7 +9,7 @@ endif()
 # Required since
 #   - "create_subscription()" and "create_publisher()" APIs changed
 #   - eigen3_cmake_module is only available in these distros
-list(APPEND ROS_DISTROS "dashing" "eloquent" "foxy" "galactic" "rolling")
+list(APPEND ROS_DISTROS "dashing" "eloquent" "foxy" "galactic" "rolling" "humble")
 set(ROS_DISTRO)
 if(DEFINED ENV{ROS2_DISTRO})
   set(ROS_DISTRO $ENV{ROS2_DISTRO})
@@ -25,7 +25,7 @@ else()
   message(FATAL_ERROR "No ROS Distro set")
 endif()
 
-set(USES_DEPRECATED_EXPORT_API "ardent" "bouncy" "crystal" "dashing" "eloquent")
+set(USES_DEPRECATED_EXPORT_API "ardent" "bouncy" "crystal" "dashing" "eloquent" "humble")
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
