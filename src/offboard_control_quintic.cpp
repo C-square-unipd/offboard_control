@@ -45,7 +45,6 @@
 
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
-// #include <px4_msgs/msg/timesync.hpp>
 #include <px4_msgs/msg/vehicle_command.hpp>
 #include <px4_msgs/msg/vehicle_control_mode.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -80,13 +79,6 @@ public:
 			this->create_publisher<VehicleCommand>("/fmu/in/vehicle_command");
 #endif
 		
-		// Get common timestamp
-		// timesync_sub_ =
-		// 	this->create_subscription<px4_msgs::msg::Timesync>("fmu/timesync/out", 10,
-		// 		[this]( px4_msgs::msg::Timesync::UniquePtr msg) {
-		// 			timestamp_.store(msg->timestamp);
-		// 		});
-
 		offboard_setpoint_counter_ = 0;
 		phase_ = 0;
 		count_ = 1;
@@ -180,7 +172,6 @@ private:
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
 	rclcpp::Publisher<VehicleCommand>::SharedPtr vehicle_command_publisher_;
-	// rclcpp::Subscription<px4_msgs::msg::Timesync>::SharedPtr timesync_sub_;
 
 	std::atomic<uint64_t> timestamp_;   //!< common synced timestamped
 
@@ -424,7 +415,7 @@ void OffboardControl::initTrajVector() {
 	for(int i= 0; i<q.cols();i++)
     {
 		setpoint.position = {(float) q(0,i), (float) q(1,i), (float) q(2,i)};
-		setpoint.yaw = -M_PI; 
+		setpoint.yaw = 1.5*M_PI; 
 
 		traj_.push_back(setpoint);
     }
